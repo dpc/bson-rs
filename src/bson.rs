@@ -273,13 +273,8 @@ impl From<DateTime<Utc>> for Bson {
 impl From<Value> for Bson {
     fn from(a: Value) -> Bson {
         match a {
-            Value::Number(x) => {
-                x.as_i64()
-                    .map(Bson::from)
-                    .or_else(|| x.as_u64().map(Bson::from))
-                    .or_else(|| x.as_f64().map(Bson::from))
-                    .unwrap_or_else(|| panic!("Invalid number value: {}", x))
-            }
+            Value::Number(x) => x.as_f64().map(Bson::from)
+                                 .unwrap_or_else(|| panic!("Invalid number value: {}", x)),
             Value::String(x) => x.into(),
             Value::Bool(x) => x.into(),
             Value::Array(x) => Bson::Array(x.into_iter().map(Bson::from).collect()),
@@ -493,6 +488,8 @@ impl Bson {
                                                        ((long % 1000) * 1000000) as u32));
             } else if let Ok(sym) = values.get_str("$symbol") {
                 return Bson::Symbol(sym.to_owned());
+            } else if let Ok(number) = values.get_i64("$numberLong") {
+                return Bson::from(number);
             }
         }
 
